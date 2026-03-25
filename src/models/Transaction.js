@@ -51,8 +51,10 @@ const transactionSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// BUG: Index on createdAt is missing, making date-range queries slow
 transactionSchema.index({ fromAccount: 1, status: 1 });
+transactionSchema.index({ createdAt: 1 });
+transactionSchema.index({ fromAccount: 1, createdAt: -1 });
+transactionSchema.index({ status: 1, createdAt: 1 });
 
 transactionSchema.methods.complete = function() {
   this.status = 'completed';

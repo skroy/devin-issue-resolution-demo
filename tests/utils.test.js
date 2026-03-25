@@ -17,10 +17,16 @@ describe('Validators', () => {
                          expect(validateEmail('@example.com')).toBe(false);
                  });
 
-                 // BUG: This test would fail - email with + is valid but our regex rejects it
-                 // test('accepts email with plus addressing', () => {
-                 //   expect(validateEmail('user+tag@example.com')).toBe(true);
-                 // });
+                 test('accepts email with plus addressing', () => {
+                         expect(validateEmail('user+tag@example.com')).toBe(true);
+                         expect(validateEmail('user+@example.com')).toBe(true);
+                         expect(validateEmail('first+second+third@example.com')).toBe(true);
+                 });
+
+                 test('accepts email with longer TLDs', () => {
+                         expect(validateEmail('user@example.technology')).toBe(true);
+                         expect(validateEmail('user@example.museum')).toBe(true);
+                 });
     });
 
            describe('validateAccountNumber', () => {

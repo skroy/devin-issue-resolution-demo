@@ -24,12 +24,16 @@ router.get('/', async (req, res, next) => {
  */
 router.get('/:id', async (req, res, next) => {
     try {
-          // BUG: Missing validation for req.params.id
-          // If id is 'null', 'undefined', or empty, this throws a CastError
-          // that produces a confusing error message instead of a clean 400
           const account = await accountService.getAccount(req.params.id);
 
-          // BUG: No ownership check - any authenticated user can view any account
+          // Ownership check: only the account owner can view their account
+          if (account.owner._id.toString() !== req.userId.toString()) {
+                  return res.status(403).json({
+                            error: 'Forbidden',
+                            message: 'You do not have permission to view this account',
+                          });
+                }
+
           res.json({ data: account });
         } catch (error) {
           next(error);

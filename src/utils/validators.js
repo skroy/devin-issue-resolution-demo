@@ -2,14 +2,10 @@
  * Validation utilities for the FinServ platform
   */
 
-// BUG: This regex doesn't handle + addresses (e.g., user+tag@domain.com)
-// Many users use + addressing for email filtering, especially in enterprise
-// Also doesn't handle newer TLDs longer than 4 chars
-const EMAIL_REGEX = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 /**
  * Validate email address
-  * BUG: Rejects valid emails with + character
    */
 function validateEmail(email) {
   if (!email || typeof email !== 'string') return false;

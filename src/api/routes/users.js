@@ -20,7 +20,7 @@ router.post('/register', authLimiter, async (req, res, next) => {
                   return res.status(409).json({ error: 'Conflict', message: 'Email already registered' });
                 }
           const user = new User({ email, firstName, lastName });
-          user.setPassword(password);
+          await user.setPassword(password);
           await user.save();
           const token = generateToken(user);
           res.status(201).json({ data: { user: { id: user._id, email: user.email, name: user.fullName }, token } });
@@ -39,7 +39,7 @@ router.post('/login', authLimiter, async (req, res, next) => {
           if (user.isLocked()) {
                   return res.status(423).json({ error: 'Locked', message: 'Account is temporarily locked' });
                 }
-          if (!user.validatePassword(password)) {
+          if (!(await user.validatePassword(password))) {
                   await user.recordFailedLogin();
                   return res.status(401).json({ error: 'Unauthorized', message: 'Invalid credentials' });
                 }

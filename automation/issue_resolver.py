@@ -36,9 +36,6 @@ PRIORITY_MAP: dict[str, tuple[int, str]] = {
     "question":  (4, "INFO"),
 }
 
-# Reverse lookup: priority rank → display name
-PRIORITY_NAMES = {0: "CRITICAL", 1: "HIGH", 2: "MEDIUM", 3: "LOW", 4: "INFO"}
-
 # ANSI colours for terminal output
 COLORS = {
     "CRITICAL": "\033[91m",  # red

@@ -19,17 +19,23 @@ router.get('/', async (req, res, next) => {
 /**
  * GET /api/v1/accounts/:id
  * Get a specific account by ID
- * BUG: No null/undefined check on req.params.id
- * Passing null, undefined, or empty string causes an unhandled 500 error
  */
 router.get('/:id', async (req, res, next) => {
     try {
-          // BUG: Missing validation for req.params.id
-          // If id is 'null', 'undefined', or empty, this throws a CastError
-          // that produces a confusing error message instead of a clean 400
           const account = await accountService.getAccount(req.params.id);
 
-          // BUG: No ownership check - any authenticated user can view any account
+          // Ownership check: only the account owner (or admin/compliance) may view
+          const ownerId = account.owner._id ? account.owner._id.toString() : account.owner.toString();
+          const isOwner = ownerId === req.userId.toString();
+          const isPrivileged = req.user && ['admin', 'compliance_officer'].includes(req.user.role);
+
+          if (!isOwner && !isPrivileged) {
+                return res.status(403).json({
+                      error: 'Forbidden',
+                      message: 'You do not have permission to view this account',
+                });
+          }
+
           res.json({ data: account });
         } catch (error) {
           next(error);

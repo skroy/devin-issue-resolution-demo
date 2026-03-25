@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -49,15 +49,13 @@ const userSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// SECURITY BUG: Using MD5 instead of bcrypt for password hashing
-userSchema.methods.setPassword = function(password) {
-  this.passwordHash = crypto.createHash('md5').update(password).digest('hex');
+userSchema.methods.setPassword = async function(password) {
+  const salt = await bcrypt.genSalt(10);
+  this.passwordHash = await bcrypt.hash(password, salt);
 };
 
-// SECURITY BUG: MD5 comparison
-userSchema.methods.validatePassword = function(password) {
-  const hash = crypto.createHash('md5').update(password).digest('hex');
-  return hash === this.passwordHash;
+userSchema.methods.validatePassword = async function(password) {
+  return bcrypt.compare(password, this.passwordHash);
 };
 
 userSchema.methods.recordLogin = function() {

@@ -43,27 +43,38 @@ class AccountService {
   }
 
   /**
-     * Update account balance
-     * BUG: No transaction locking - race conditions possible with concurrent updates
+     * Update account balance using atomic operations to prevent race conditions.
+     * Uses MongoDB $inc for atomic balance updates. For withdrawals, a query
+     * condition ensures sufficient funds before decrementing.
      */
   async updateBalance(accountId, amount) {
-        const account = await Account.findById(accountId);
-        if (!account) {
-                const error = new Error('Account not found');
-                error.statusCode = 404;
-                throw error;
-        }
+        const query = { _id: accountId };
 
-      // BUG: Direct balance manipulation without optimistic locking
-      account.balance += amount;
+      // For withdrawals (negative amount), ensure balance won't go below zero
+      if (amount < 0) {
+              query.balance = { $gte: Math.abs(amount) };
+      }
 
-      if (account.balance < 0) {
+      const account = await Account.findOneAndUpdate(
+              query,
+              { $inc: { balance: amount } },
+              { new: true }
+      );
+
+      if (!account) {
+              // Determine whether the account doesn't exist or has insufficient funds
+              const exists = await Account.findById(accountId);
+              if (!exists) {
+                      const error = new Error('Account not found');
+                      error.statusCode = 404;
+                      throw error;
+              }
               const error = new Error('Insufficient funds');
               error.statusCode = 400;
               throw error;
       }
 
-      return account.save();
+      return account;
   }
 
   /**

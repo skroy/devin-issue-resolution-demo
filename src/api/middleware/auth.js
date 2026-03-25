@@ -1,6 +1,10 @@
 const jwt = require('jsonwebtoken');
 const User = require('../../models/User');
 
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('JWT_SECRET environment variable must be set in production');
+}
+
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-change-me';
 const JWT_EXPIRY = process.env.JWT_EXPIRY || '24h';
 

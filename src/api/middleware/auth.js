@@ -27,7 +27,7 @@ const JWT_EXPIRY = process.env.JWT_EXPIRY || '24h';
                                                                                // BUG: Off-by-one error in expiry check
                                                                                      // Uses < instead of <= which means tokens are valid for 1 second longer than intended
                                                                                            const now = Math.floor(Date.now() / 1000);
-                                                                                                 if (decoded.exp < now) {
+                                                                                                 if (decoded.exp <= now) {
                                                                                                          return res.status(401).json({
                                                                                                                    error: 'Unauthorized',
                                                                                                                              message: 'Token has expired',

@@ -44,26 +44,49 @@ class AccountService {
 
   /**
      * Update account balance
-     * BUG: No transaction locking - race conditions possible with concurrent updates
+     * Uses atomic MongoDB $inc with a balance floor condition to prevent race conditions
      */
   async updateBalance(accountId, amount) {
-        const account = await Account.findById(accountId);
+        // For withdrawals (negative amount), use an atomic findOneAndUpdate with a
+        // condition that ensures the balance won't go below zero. This prevents race
+        // conditions where concurrent withdrawals could both read the same balance.
+        if (amount < 0) {
+                const account = await Account.findOneAndUpdate(
+                        { _id: accountId, balance: { $gte: Math.abs(amount) } },
+                        { $inc: { balance: amount } },
+                        { new: true }
+                );
+
+                if (!account) {
+                        // Distinguish between "not found" and "insufficient funds"
+                        const exists = await Account.findById(accountId);
+                        if (!exists) {
+                                const error = new Error('Account not found');
+                                error.statusCode = 404;
+                                throw error;
+                        }
+                        const error = new Error('Insufficient funds');
+                        error.statusCode = 400;
+                        throw error;
+                }
+
+                return account;
+        }
+
+        // For deposits (positive amount), use atomic $inc without a balance floor check
+        const account = await Account.findOneAndUpdate(
+                { _id: accountId },
+                { $inc: { balance: amount } },
+                { new: true }
+        );
+
         if (!account) {
                 const error = new Error('Account not found');
                 error.statusCode = 404;
                 throw error;
         }
 
-      // BUG: Direct balance manipulation without optimistic locking
-      account.balance += amount;
-
-      if (account.balance < 0) {
-              const error = new Error('Insufficient funds');
-              error.statusCode = 400;
-              throw error;
-      }
-
-      return account.save();
+        return account;
   }
 
   /**
